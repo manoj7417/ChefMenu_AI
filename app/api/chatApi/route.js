@@ -1,0 +1,228 @@
+// app/api/openai/route.ts
+import { NextResponse } from 'next/server';
+
+const menuItems = [
+    { "name": "Papadum Basket", "price": "£2.50" },
+    { "name": "Vegetable Samosa (2pcs)", "price": "£4.99" },
+    { "name": "Onion Bhaji (VE)", "price": "£5.99" },
+    { "name": "Tandoori Paneer Tikka Shashlik", "price": "£8.50" },
+    { "name": "Tandoori Soy Chops", "price": "£10.50" },
+    { "name": "Tandoori Broccoli", "price": "£9.00" },
+    { "name": "Masala Chips or Chips", "price": "£4.25 or £3.95" },
+    { "name": "Samosa Chaat", "price": "£7.50" },
+    { "name": "Aloo Tikki Chaat", "price": "£6.95" },
+    { "name": "Aloo Chana Chaat", "price": "£6.95" },
+    { "name": "Chicken Tikka", "price": "£9.95" },
+    { "name": "Spicy Chicken Wings", "price": "£9.95" },
+    { "name": "Tandoori Chicken", "price": "£12.50" },
+    { "name": "Murg Malai Tikka", "price": "£10.50" },
+    { "name": "Hotty Naughty Tikka", "price": "£10.99" },
+    { "name": "Lamb Seekh Kebab", "price": "£10.99" },
+    { "name": "Lamb Chops", "price": "£15.99" },
+    { "name": "Lamb Samosa", "price": "£5.99" },
+    { "name": "Salmon Tikka", "price": "£12.50" },
+    { "name": "Tandoori King Prawns", "price": "£16.99" },
+    { "name": "Tandoori Mixed Grill Platter", "price": "£19.75" },
+    { "name": "Fish Amritsari", "price": "£12.99" },
+    { "name": "Paneer Butter Masala", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Palak Paneer", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Paneer Tikka Masala", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Kadhai Paneer", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Mushroom Matar Masala", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Dal Makhani", "price": "£12.50, Side Dish £7.95" },
+    { "name": "Dal Tadka", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Chickpeas Curry", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Mixed Veg Curry", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Aloo Gobi Masala", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Bombay Aloo", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Saag Aloo", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Bhindi do Pyaza", "price": "£10.95, Side Dish £7.95" },
+    { "name": "Butter Chicken", "price": "£12.95" },
+    { "name": "Karahi Chicken", "price": "£12.95" },
+    { "name": "Chicken Korma", "price": "£12.95" },
+    { "name": "Chicken Tikka Masala", "price": "£12.95" },
+    { "name": "Chicken Jhalfrezi", "price": "£12.95" },
+    { "name": "Chicken Madras", "price": "£12.95" },
+    { "name": "Chicken Vindaloo", "price": "£12.95" },
+    { "name": "Chicken Dhansak", "price": "£12.95" },
+    { "name": "Chicken Jhafrezi", "price": "£12.9" },
+    { "name": "Lamb Rogan Josh", "price": "£13.50" },
+    { "name": "Karahi Lamb", "price": "£13.50" },
+    { "name": "Lamb Bhuna", "price": "£13.50" },
+    { "name": "Lamb Madras", "price": "£13.50" },
+    { "name": "Lamb Vindaloo", "price": "£13.50" },
+    { "name": "Keema Matar", "price": "£13.50" },
+    { "name": "Prawn Curry Masala", "price": "£16.95" },
+    { "name": "Goan Fish Curry", "price": "£15.50" },
+    { "name": "Vegetable Biryani (V)", "price": "£13.95" },
+    { "name": "Prawn Biryani", "price": "£16.95" },
+    { "name": "Chicken Biryani", "price": "£14.95" },
+    { "name": "Lamb Biryani", "price": "£16.75" },
+    { "name": "Plain Rice", "price": "£4.15" },
+    { "name": "Jeera Rice", "price": "£4.50" },
+    { "name": "Jeera and Onion Pulao", "price": "£4.75" },
+    { "name": "Mixed Veg Pulao", "price": "£4.95" },
+    { "name": "Egg Fried Rice", "price": "£5.50" },
+    { "name": "Mushroom Rice", "price": "£5.25" },
+    { "name": "Pea Pulao", "price": "£4.95" },
+    { "name": "Plain Naan", "price": "£3.25" },
+    { "name": "Butter Naan", "price": "£3.50" },
+    { "name": "Garlic Naan", "price": "£3.85" },
+    { "name": "Chili Garlic Naan", "price": "£3.95" },
+    { "name": "Peshwari Naan", "price": "£4.25" },
+    { "name": "Keema Naan", "price": "£4.95" },
+    { "name": "Cheese Naan", "price": "£4.50" },
+    { "name": "Tandoori Roti", "price": "£3.25" },
+    { "name": "Amritsari Kulcha", "price": "£4.50" },
+    { "name": "Paneer Kulcha", "price": "£4.50" },
+    { "name": "Chilli Garlic Mushroom", "price": "£9.95" },
+    { "name": "Chilli Paneer", "price": "£10.95" },
+    { "name": "Gobi 65", "price": "£8.50" },
+    { "name": "Chilli Garlic Prawns", "price": "£14.25" },
+    { "name": "Chilli Chicken", "price": "£10.95" },
+    { "name": "Chicken 65", "price": "£10.95" },
+    { "name": "Chicken Manchurian", "price": "£10.95" },
+    { "name": "Schezwan Fried Rice", "price": "£5.50" },
+    { "name": "Vegetable Fried Rice", "price": "£5.25" },
+    { "name": "Egg Fried Rice", "price": "£5.50" },
+    { "name": "Cucumber Raita", "price": "£2.95" },
+    { "name": "Plain Yogurt", "price": "£2.95" },
+    { "name": "Green Salad", "price": "£3.25" },
+    { "name": "Masala Lachha Onion Salad", "price": "£3.25" },
+    { "name": "Mixed Pickle", "price": "£0.75" },
+    { "name": "Mango Chutney", "price": "£0.50" },
+    { "name": "Onion Chutney", "price": "£0.50" },
+    { "name": "Mint Chutney", "price": "£0.50" },
+    { "name": "Chicken Nugget With Chips", "price": "£7.95" },
+    { "name": "Fish Finger With Chips", "price": "£7.95" },
+    { "name": "Gulab Jamun", "price": "£5.50" },
+    { "name": "Gajar Ka Halwa", "price": "£6.50" },
+    { "name": "Sticky Toffee Pudding", "price": "£7.50" },
+    { "name": "Warm Chocolate Brownie with Ice Cream", "price": "£7.50" },
+    { "name": "Double Cheeseburger", "price": "£6" },
+    { "name": "Chicken Burger", "price": "£6" },
+    { "name": "Vegetable Burger", "price": "£6" },
+    { "name": "Sausage & Caramelized Red Onion Sandwich", "price": "£6" },
+    { "name": "Sausage Roll & Chips", "price": "£6" },
+    { "name": "Classic BLT Sandwich", "price": "£6" },
+    { "name": "Tuna Sandwich", "price": "£6" },
+    { "name": "Ham & Melted Cheese Sandwich", "price": "£6" },
+    { "name": "Fish & Chips", "price": "£6" },
+    { "name": "Chicken Tikka Roll", "price": "£6" },
+    { "name": "Chicken Biryani", "price": "£6" },
+    { "name": "Chicken Pasta Salad", "price": "£6" },
+    { "name": "Jacket Potato with Cheese & Beans", "price": "£6" },
+    {
+        "name": "Jacket Potato with Tuna, Sweetcorn, Cheese & Salad",
+        "price": "£8"
+    },
+    { "name": "Greek Salad", "price": "£7.50" },
+    { "name": "Garden Green Salad", "price": "£7.50" },
+    { "name": "Pasta Salad", "price": "£7.50" },
+    { "name": "Add Chicken", "price": "£2.50" },
+    { "name": "French Fries", "price": "£3.50" },
+    { "name": "Cajun Spiced Fries", "price": "£4.25" },
+    { "name": "The White Hart Gourmet Beef Burger", "price": "£14.50" },
+    { "name": "Smoky Joe Chicken Burger", "price": "£13.95" },
+    { "name": "Bad Boy Vegetable Burger", "price": "£13.50" },
+    { "name": "Bacon and Brie", "price": "£8.25" },
+    { "name": "Chicken Tikka Roll", "price": "£7.95" },
+    { "name": "Ham and Cheese", "price": "£7.50" },
+    { "name": "Paneer Tikka Roll", "price": "£7.95" },
+    { "name": "Sausages and Red Onion", "price": "£7.95" },
+    { "name": "Lamb Kebab Roll", "price": "£8.25" },
+    { "name": "Fish FingersTartar", "price": "£7.95" },
+    { "name": "Brieand Caramelised Red Onion", "price": "£7.95" },
+    { "name": "Chicken Nuggets", "price": "£7.95" },
+    { "name": "Fish Fingers", "price": "£7.95" },
+    { "name": "Sticky Toffee Pudding", "price": "£7.50" },
+    { "name": "Cheesecake of the Week", "price": "£6.50" },
+    { "name": "Ice Cream Selection", "price": "£5.50" },
+    { "name": "House Special", "price": "£5.95" },
+    { "name": "Hot Gulab Jamun", "price": "£5.50" }
+]
+
+
+const systemMessage = {
+    role: "system",
+    content: `You are an AI assistant for a restaurant. Your primary role is to help customers with menu inquiries, recommendations, and general questions about the restaurant. 
+
+  Here is the complete menu with prices:
+  ${JSON.stringify(menuItems, null, 2)}
+
+  Guidelines:
+  1. Always be polite and helpful
+  2. When asked about menu items or prices, respond with the exact price from the menu
+  3. For recommendations, consider popular items or pairings
+  4. If asked about ingredients or preparation, say you'll check with the kitchen
+  5. For dietary restrictions, highlight suitable options
+  6. Never make up items or prices not listed in the menu`
+};
+
+export async function POST(req) {
+    // Validate content type
+    const contentType = req.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+        return NextResponse.json(
+            { error: 'Invalid content type. Expected application/json' },
+            { status: 415 }
+        );
+    }
+
+    try {
+        const { messages } = await req.json();
+
+        // Validate messages
+        if (!Array.isArray(messages)) {
+            return NextResponse.json(
+                { error: 'Messages must be an array' },
+                { status: 400 }
+            );
+        }
+
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json(
+                { error: 'OpenAI API key not configured' },
+                { status: 500 }
+            );
+        }
+
+        // Prepend the system message to the conversation
+        const conversation = [systemMessage, ...messages];
+
+        const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: conversation,
+                temperature: 0.7,
+                max_tokens: 500,
+            }),
+        });
+
+        // Check for API errors
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            console.error('OpenAI API error:', errorData);
+            return NextResponse.json(
+                { error: 'OpenAI API request failed', details: errorData },
+                { status: apiResponse.status }
+            );
+        }
+
+        const data = await apiResponse.json();
+        return NextResponse.json(data);
+
+    } catch (error) {
+        console.error('OpenAI route error:', error);
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
