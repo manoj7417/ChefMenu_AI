@@ -11,14 +11,12 @@ export default function PizzaAssistant() {
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
+  const [isOpen, setIsOpen] = useState(false); // Toggle chatbot
 
-  // Initialize Vapi on client-side only
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("@vapi-ai/web").then((module) => {
         const Vapi = module.default;
-
-        // Get API key from environment variables - only check once
         const apiKey = process.env.NEXT_PUBLIC_VAPI_API_KEY || "";
 
         if (!apiKey) {
@@ -30,12 +28,10 @@ export default function PizzaAssistant() {
           return;
         }
 
-        // Initialize Vapi
         const vapiInstance = new Vapi(apiKey);
         setVapi(vapiInstance);
         setIsApiKeyValid(true);
 
-        // Set up event listeners
         vapiInstance.on("call-start", () => {
           setIsConnecting(false);
           setIsConnected(true);
@@ -49,23 +45,14 @@ export default function PizzaAssistant() {
           setStatus("Call ended");
         });
 
-        vapiInstance.on("speech-start", () => {
-          setIsSpeaking(true);
-        });
-
-        vapiInstance.on("speech-end", () => {
-          setIsSpeaking(false);
-        });
-
-        vapiInstance.on("volume-level", (level) => {
-          setVolumeLevel(level);
-        });
+        vapiInstance.on("speech-start", () => setIsSpeaking(true));
+        vapiInstance.on("speech-end", () => setIsSpeaking(false));
+        vapiInstance.on("volume-level", (level) => setVolumeLevel(level));
 
         vapiInstance.on("error", (error) => {
           console.error("Vapi error:", error);
           setIsConnecting(false);
 
-          // Handle different types of errors
           if (error?.error?.message?.includes("card details")) {
             setErrorMessage(
               "Payment required. Visit the Vapi dashboard to set up your payment method."
@@ -74,7 +61,6 @@ export default function PizzaAssistant() {
             error?.error?.statusCode === 401 ||
             error?.error?.statusCode === 403
           ) {
-            // API key is invalid - update state
             setErrorMessage(
               "API key is invalid. Please check your environment variables."
             );
@@ -88,7 +74,6 @@ export default function PizzaAssistant() {
       });
     }
 
-    // Cleanup function
     return () => {
       if (vapi) {
         vapi.stop();
@@ -96,7 +81,6 @@ export default function PizzaAssistant() {
     };
   }, []);
 
-  // Start call function - no need to recheck API key
   const startCall = () => {
     if (!isApiKeyValid) {
       setErrorMessage("Cannot start call: API key is invalid or missing.");
@@ -110,7 +94,6 @@ export default function PizzaAssistant() {
     vapi.start(assistantOptions);
   };
 
-  // End call function
   const endCall = () => {
     if (vapi) {
       vapi.stop();
@@ -118,110 +101,84 @@ export default function PizzaAssistant() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        padding: "20px",
-        color: "white",
-      }}
-    >
-      <h1 style={{ marginBottom: "30px" }}>Pizza Voice Assistant</h1>
-
-      <div style={{ marginBottom: "20px" }}>
-        <p>Status: {status}</p>
-
-        {isConnected && (
-          <div style={{ marginTop: "10px" }}>
-            <p>
-              {isSpeaking ? "Assistant is speaking" : "Assistant is listening"}
-            </p>
-
-            {/* Simple volume indicator */}
-            <div
-              style={{
-                display: "flex",
-                marginTop: "10px",
-                marginBottom: "10px",
-                gap: "3px",
-              }}
-            >
-              {Array.from({ length: 10 }, (_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: "15px",
-                    height: "15px",
-                    backgroundColor: i / 10 < volumeLevel ? "#3ef07c" : "#444",
-                    borderRadius: "2px",
-                  }}
-                />
-              ))}
+    <div className="fixed bottom-4 right-4 z-50">
+      {isOpen ? (
+        <div className="bg-gray-900 text-white rounded-lg shadow-lg w-80 max-h-[90vh] p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">🍕 Vappy's Assistant</h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✖
+              </button>
             </div>
+
+            {errorMessage && (
+              <div className="bg-red-600 text-sm p-2 rounded mb-2">
+                {errorMessage}
+                {errorMessage.includes("payment") && (
+                  <a
+                    href="https://dashboard.vapi.ai"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline block mt-1"
+                  >
+                    Go to Dashboard
+                  </a>
+                )}
+              </div>
+            )}
+
+            {isConnected && (
+              <>
+                <p>{isSpeaking ? "Speaking..." : "Listening..."}</p>
+                <div className="flex gap-1 mt-2 mb-3">
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2 h-2 rounded-sm ${
+                        i / 10 < volumeLevel ? "bg-green-400" : "bg-gray-600"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        )}
-      </div>
 
-      {errorMessage && (
-        <div
-          style={{
-            backgroundColor: "#f03e3e",
-            padding: "15px",
-            borderRadius: "5px",
-            marginBottom: "20px",
-            maxWidth: "400px",
-            textAlign: "center",
-          }}
-        >
-          <p>{errorMessage}</p>
-
-          {errorMessage.includes("payment") && (
-            <a
-              href="https://dashboard.vapi.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-block",
-                marginTop: "10px",
-                color: "white",
-                textDecoration: "underline",
-              }}
-            >
-              Go to Vapi Dashboard
-            </a>
-          )}
+          <button
+            onClick={isConnected ? endCall : startCall}
+            disabled={isConnecting || !isApiKeyValid}
+            className={`mt-auto py-2 px-4 text-sm font-medium rounded ${
+              isConnected ? "bg-red-600 text-white" : "bg-white text-black"
+            } ${
+              isConnecting || !isApiKeyValid
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
+          >
+            {isConnecting
+              ? "Connecting..."
+              : isConnected
+              ? "End Call"
+              : "Call Vappy’s Pizzeria"}
+          </button>
         </div>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="bg-red-500 text-white rounded-full p-4 shadow-lg hover:bg-red-600"
+          title="Open Chat"
+        >
+          🍕
+        </button>
       )}
-
-      <button
-        onClick={isConnected ? endCall : startCall}
-        disabled={isConnecting || !isApiKeyValid}
-        style={{
-          backgroundColor: isConnected ? "#f03e3e" : "white",
-          color: isConnected ? "white" : "black",
-          border: "none",
-          borderRadius: "8px",
-          padding: "12px 24px",
-          fontSize: "16px",
-          fontWeight: "500",
-          cursor: isConnecting || !isApiKeyValid ? "not-allowed" : "pointer",
-          opacity: isConnecting || !isApiKeyValid ? 0.7 : 1,
-        }}
-      >
-        {isConnecting
-          ? "Connecting..."
-          : isConnected
-          ? "End Call"
-          : "Call Vappy's Pizzeria Shop"}
-      </button>
     </div>
   );
 }
 
-// Pizza assistant configuration
 const assistantOptions = {
   name: "Pizza Assistant",
   firstMessage: "Vappy's Pizzeria speaking, how can I help you?",
@@ -280,41 +237,3 @@ order, then end the conversation.
     ],
   },
 };
-
-// const assistantOptions = {
-//   name: "Pizza Assistant",
-//   firstMessage:
-//     "वैपी की पिज़्ज़ेरिया में आपका स्वागत है! मैं आपकी कैसे मदद कर सकता हूँ?",
-//   transcriber: {
-//     provider: "deepgram",
-//     model: "nova-2",
-//     language: "hi",
-//   },
-//   voice: {
-//     provider: "11labs",
-//     voiceId: "pGYsZruQzo8cpdFVZyJc", // Smriti - Indian Storyteller
-//   },
-//   model: {
-//     provider: "openai",
-//     model: "gpt-4",
-//     messages: [
-//       {
-//         role: "system",
-//         content: `आप वैपी की पिज़्ज़ेरिया के लिए एक वॉयस असिस्टेंट हैं। आपका काम ग्राहकों से ऑर्डर लेना है।
-
-// मेन्यू में ये शामिल है:
-// - स्टार्टर: पापड़म बास्केट, वेज समोसा, तंदूरी पनीर
-// - मुख्य कोर्स: चिकन टिक्का मसाला, पनीर बटर मसाला, लैम्ब रोगन जोश
-// - ब्रेड और साइड्स: बटर नान, जीरा राइस, ककड़ी रायता
-
-// हर कैटेगरी से ग्राहक केवल 1 आइटम ऑर्डर कर सकता है।
-
-// अगर ग्राहक ऑफ-टॉपिक हो जाए, तो बातचीत को ऑर्डर पर वापस लाएं।
-
-// मजेदार, हल्की-फुल्की भाषा का इस्तेमाल करें। जवाब छोटे और सीधे हों।
-
-// जब ऑर्डर पूरा हो जाए, तो कहें: "ऑर्डर कन्फर्म हो गया है, 10-20 मिनट में तैयार हो जाएगा!"`,
-//       },
-//     ],
-//   },
-// };
