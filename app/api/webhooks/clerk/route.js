@@ -1,4 +1,7 @@
+import { createUser } from '@/lib/user.action'
+import { clerkClient } from "@clerk/nextjs";
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
     try {
