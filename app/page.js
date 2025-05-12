@@ -1,11 +1,10 @@
-import Image from "next/image";
-import Chatbot from "./components/Chatbot";
-import RestaurantChatbot from "./components/RestaurantChatbot";
+import RestaurantChatbot from "../components/shared/RestaurantChatbot";
+import HeroSection from "@/components/shared/HeroSection";
 
 export default function Home() {
   return (
     <>
-      {/* <Chatbot /> */}
+      <HeroSection />
       <RestaurantChatbot />
     </>
   );
